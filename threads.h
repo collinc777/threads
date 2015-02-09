@@ -1,0 +1,17 @@
+#ifndef THREADS_H_
+#define THREADS_H_
+
+#define SIZE_OF_STACK 131072
+//size in bytes. equal to 128KB
+
+struct thread;
+
+struct thread *thread_create(void (*f)(void *arg), void *arg);
+void thread_add_runqueue(struct thread *t);
+void thread_yield(void);
+void dispatch(void);
+void schedule(void);
+void thread_exit(void);
+void thread_start_threading(void);
+
+#endif // THREADS_H
