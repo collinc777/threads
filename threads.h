@@ -4,7 +4,7 @@
 
 struct thread{};
 
-struct thread *thread_create(void (*f)(void *arg), void *arg){}
+struct thread *thread_create(void (*f)(void *arg), void *arg);
 void thread_add_runqueue(struct thread *t);
 void thread_yield(void);
 void dispatch(void);
