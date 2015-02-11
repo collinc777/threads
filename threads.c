@@ -20,6 +20,7 @@ struct thread{
 };
 
 static struct thread *current_thread;
+static struct thread *last_thread;
 
 
 /* allocates a struct thread
@@ -77,16 +78,14 @@ void thread_add_runqueue(struct thread *t){
 	{
 		//printf("Thread is uninitialized\n");
 		current_thread = t;
+		last_thread = t;
+		last_thread->next = current_thread;
 		//printf("curent thread %lu == %lu\n", (long unsigned int) current_thread, (long unsigned int) t);
 	}else{
 		//current thread already exists
-		struct thread *temp;
-		temp = current_thread;
-		while(temp->next){
-			//printf("temps value: %lu\n", (long unsigned int )temp);
-			temp = temp->next;
-		}
-		temp->next = t;
+		last_thread->next = t;
+		last_thread = t;
+		last_thread->next = current_thread;
 	}
 
 	
@@ -103,11 +102,33 @@ void thread_yield(void){
 		//current thread exists .
 		printf("yaya we get here\n");
 		struct thread *temp = current_thread;
-		schedule(void);
+		void schedule(void);
 	}
 
 };
+
+
 void dispatch(void){};
-void schedule(void){};
-void thread_exit(void){};
+/*decides which thread to run next.*/
+void schedule(void){
+	if(current_thread->next == NULL){
+		printf("should never be the case. if we get here WE MESSED UP\n");
+	}else{
+		last_thread = last_thread->next;
+		current_thread = current_thread->next;
+	}
+};
+/*
+removes calling thread from run queue
+frees stack and struct thread
+sets current to next and calls dispatch*/
+void thread_exit(void){
+	last_thread->next = current_thread->next;
+	struct thread *tmp = current_thread;
+	current_thread = current_thread->next;
+    tmp->next = NULL;
+    //now to free up tmp
+    free(tmp->thread_stack);
+    free(tmp);
+};
 void thread_start_threading(void){};
