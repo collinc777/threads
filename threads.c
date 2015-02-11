@@ -13,15 +13,14 @@ typedef struct stk
 struct thread{
 	f function;	
 	stack *thread_stack;
+	struct thread *next;
 	//pionter to the threads stack
 	//fields storing the current stack and base pointer when the thread yields.
 	//futher storage to preserve teh thread's state. 
 };
 
-struct runQ{
-	struct thread *current_thread;
-	struct thread *next_thread;
-};
+static struct thread *current_thread;
+
 
 /* allocates a struct thread
 	a new stack for the thread and sets default values
@@ -29,10 +28,20 @@ struct runQ{
 struct thread *thread_create(void (*f)(void *arg), void *arg){	
 	//thread created. now need to initialize and malloc more mem
 
+
 	struct thread *t1;
 	t1 = (struct thread *) malloc(sizeof(struct thread));
 	//create should work now lets initialize the struct
 	t1->function = f;
+	t1->next = NULL;
+	t1->thread_stack = (stack *) malloc(sizeof(stack));
+	// t1->thread_stack = (stack *) malloc(sizeof(stack));
+	// if (current_thread == 0)	
+	// {
+	// 	printf("Thread is uninitialized\n");
+	// 	current_thread = t1;
+	// 	printf("curent thread %lu == %lu\n", (long unsigned int) current_thread, (long unsigned int) t1);
+	// }
 	// if(t1->function){
 	// 	printf("function has a value that is not null\n");
 	// 	printf("%lu\n", sizeof(t1->function));
@@ -42,7 +51,7 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	// 	printf("Fucntion DID NOT WORK\n");
 	// }
 	//can we be asured that it will always be divisible by 8? the world may never know
-	t1->thread_stack = (stack *) malloc(sizeof(stack));
+	
 	// if(t1->thread_stack){
 	// 	printf("thread stack is pointing to something that is not null\n");
 	// 	printf("%lu\n", sizeof(t1->thread_stack->data));
@@ -64,18 +73,21 @@ maintain ring of those structures
   */
 
 void thread_add_runqueue(struct thread *t){
-	struct runQ *rQ;
-	rQ = (struct runQ*)malloc(sizeof(struct runQ));
-	rQ->current_thread = t;
-	rQ->next_thread = t;
-	// if(rQ){
-	// 	printf("RQ is not null\n");
-	// 	printf("thread t poins to: %lu\n", (long unsigned int)t);
-	// 	printf("current thread points to: %lu\n", (long unsigned int) rQ->current_thread);
-	// 	printf("next thread points to %lu\n", (long unsigned int) rQ->next_thread);
-	// }else{
-	// 	printf("NULLAF\n");
-	// }
+	if (current_thread == 0)	
+	{
+		printf("Thread is uninitialized\n");
+		current_thread = t;
+		printf("curent thread %lu == %lu\n", (long unsigned int) current_thread, (long unsigned int) t);
+	}else{
+		//current thread already exists
+		struct thread *temp;
+		temp = current_thread;
+		while(temp->next){
+			printf("temps value: %lu\n", (long unsigned int )temp);
+			temp = temp->next;
+		}
+		temp->next = t;
+	}
 
 	
 };
