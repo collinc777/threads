@@ -103,11 +103,15 @@ void thread_yield(void){
 		printf("yaya we get here\n");
 		struct thread *temp = current_thread;
 		void schedule(void);
+		void dispatch(void);
 	}
 
 };
 
-
+/*
+restores state of scheduled thread.
+if never run
+	set the initial stack and base pointer .*/
 void dispatch(void){};
 /*decides which thread to run next.*/
 void schedule(void){
@@ -130,5 +134,6 @@ void thread_exit(void){
     //now to free up tmp
     free(tmp->thread_stack);
     free(tmp);
+    void dispatch(void);
 };
 void thread_start_threading(void){};
