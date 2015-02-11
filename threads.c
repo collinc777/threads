@@ -75,15 +75,15 @@ maintain ring of those structures
 void thread_add_runqueue(struct thread *t){
 	if (current_thread == 0)	
 	{
-		printf("Thread is uninitialized\n");
+		//printf("Thread is uninitialized\n");
 		current_thread = t;
-		printf("curent thread %lu == %lu\n", (long unsigned int) current_thread, (long unsigned int) t);
+		//printf("curent thread %lu == %lu\n", (long unsigned int) current_thread, (long unsigned int) t);
 	}else{
 		//current thread already exists
 		struct thread *temp;
 		temp = current_thread;
 		while(temp->next){
-			printf("temps value: %lu\n", (long unsigned int )temp);
+			//printf("temps value: %lu\n", (long unsigned int )temp);
 			temp = temp->next;
 		}
 		temp->next = t;
@@ -92,11 +92,19 @@ void thread_add_runqueue(struct thread *t){
 	
 };
 /*
-suspends current thread by saving its context.
-calls cheduler and the dispatcher.
-if thread is resumed later. it continues eecution with next instruction
-immidealty following prior yield call. */
+sspends current thread by saving context/ what is context?
+save stack state..
+calls scheduler which is inherently called by the dispatcher. 
+*/
 void thread_yield(void){
+	if(current_thread == 0){
+		printf("error: cannot call yield on null thread\n");
+	}else{
+		//current thread exists .
+		printf("yaya we get here\n");
+		struct thread *temp = current_thread;
+		schedule(void);
+	}
 
 };
 void dispatch(void){};
