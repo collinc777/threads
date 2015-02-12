@@ -5,7 +5,7 @@
 
 //TODOS: make stack and base pointer point to top of stack cause they dont...
 //todo:  add setjmp and longjmp to shit. 
-
+//todo: how to determine if the threads function returned from execution?
 typedef void (*f)(void *arg);
 
 typedef struct stk
@@ -18,6 +18,7 @@ struct thread{
 	stack *base_ptr;
 	stack *thread_stack;
 	struct thread *next;
+	void *args;
 	//pionter to the threads stack
 	//fields storing the current stack and base pointer when the thread yields.
 	//futher storage to preserve teh thread's state. 
@@ -38,8 +39,11 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	t1 = (struct thread *) malloc(sizeof(struct thread));
 	//create should work now lets initialize the struct
 	t1->function = f;
+	t1->args = arg;
 	t1->next = NULL;
 	t1->thread_stack = (stack *) malloc(sizeof(stack));
+
+	t1->base_ptr = t1->thread_stack; 
 
 	// t1->thread_stack = (stack *) malloc(sizeof(stack));
 	// if (current_thread == 0)	
@@ -88,6 +92,7 @@ void thread_add_runqueue(struct thread *t){
 		//printf("curent thread %lu == %lu\n", (long unsigned int) current_thread, (long unsigned int) t);
 	}else{
 		//current thread already exists
+
 		last_thread->next = t;
 		last_thread = t;
 		last_thread->next = current_thread;
@@ -114,10 +119,18 @@ void thread_yield(void){
 };
 
 /*
+TODO: need to figure out how to test if current thread has returned from exec. 
 restores state of scheduled thread.
 if never run
 	set the initial stack and base pointer .*/
-void dispatch(void){};
+void dispatch(void){
+	//following is here for testing till i figure out jmp reason.
+	//need to get these to be correct....
+	//set up thread stack and base pointer
+	__asm__ volatile("mov %%rax, %%rsp" : : "a" (current_thread->thread_stack));
+	__asm__ volatile("mov %%rax, %%rbp" : : "a" (current_thread->base_ptr));
+
+};
 /*decides which thread to run next.*/
 void schedule(void){
 	if(current_thread->next == NULL){
@@ -139,6 +152,9 @@ void thread_exit(void){
     //now to free up tmp
     free(tmp->thread_stack);
     free(tmp);
-    void dispatch(void);
+    dispatch();
 };
-void thread_start_threading(void){};
+void thread_start_threading(void){
+	schedule();
+	dispatch();
+};
