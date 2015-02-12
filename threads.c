@@ -1,9 +1,9 @@
 #include <stdlib.h> //malloc
 #include <stdio.h>
+#include <setjmp.h>
 
 #define SIZE_OF_STACK 131072
 
-//TODOS: make stack and base pointer point to top of stack cause they dont...
 //todo:  add setjmp and longjmp to shit. 
 //todo: how to determine if the threads function returned from execution?
 typedef void (*f)(void *arg);
@@ -19,6 +19,7 @@ struct thread{
 	stack *thread_stack;
 	struct thread *next;
 	void *args;
+	jmp_buf jmp;
 	//pionter to the threads stack
 	//fields storing the current stack and base pointer when the thread yields.
 	//futher storage to preserve teh thread's state. 
@@ -42,6 +43,7 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	t1->args = arg;
 	t1->next = NULL;
 	t1->thread_stack = (stack *) malloc(sizeof(stack));
+	t1->thread_stack = (t1->thread_stack->data) + SIZE_OF_STACK;
 
 	t1->base_ptr = t1->thread_stack; 
 
@@ -110,8 +112,7 @@ void thread_yield(void){
 		printf("error: cannot call yield on null thread\n");
 	}else{
 		//current thread exists .
-		printf("yaya we get here\n");
-		struct thread *temp = current_thread;
+		setjmp(current_thread->jmp);
 		void schedule(void);
 		void dispatch(void);
 	}
@@ -127,9 +128,14 @@ void dispatch(void){
 	//following is here for testing till i figure out jmp reason.
 	//need to get these to be correct....
 	//set up thread stack and base pointer
-	__asm__ volatile("mov %%rax, %%rsp" : : "a" (current_thread->thread_stack));
-	__asm__ volatile("mov %%rax, %%rbp" : : "a" (current_thread->base_ptr));
-
+	if(! setjmp(current_thread->jmp)){
+		__asm__ volatile("mov %%rax, %%rsp" : : "a" (current_thread->thread_stack));
+		__asm__ volatile("mov %%rax, %%rbp" : : "a" (current_thread->base_ptr));
+		current_thread->function(current_thread->args);
+	}else{
+		longjmp(current_thread->jmp, 1);
+	}
+	//if returns i guesss it comes down here?
 };
 /*decides which thread to run next.*/
 void schedule(void){

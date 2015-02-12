@@ -25,7 +25,6 @@ void f2(void *arg)
 
 void f1(void *arg)
 {
-    printf("do i get here\n");
     int i = 100;
     struct thread *t2 = thread_create(f2, NULL);
     thread_add_runqueue(t2);
