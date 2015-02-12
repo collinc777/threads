@@ -3,6 +3,9 @@
 
 #define SIZE_OF_STACK 131072
 
+//TODOS: make stack and base pointer point to top of stack cause they dont...
+//todo:  add setjmp and longjmp to shit. 
+
 typedef void (*f)(void *arg);
 
 typedef struct stk
@@ -12,6 +15,7 @@ typedef struct stk
 
 struct thread{
 	f function;	
+	stack *base_ptr;
 	stack *thread_stack;
 	struct thread *next;
 	//pionter to the threads stack
@@ -36,6 +40,7 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	t1->function = f;
 	t1->next = NULL;
 	t1->thread_stack = (stack *) malloc(sizeof(stack));
+
 	// t1->thread_stack = (stack *) malloc(sizeof(stack));
 	// if (current_thread == 0)	
 	// {
