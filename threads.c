@@ -15,10 +15,11 @@ typedef struct stk
 
 struct thread{
 	f function;	
-	stack *base_ptr;
-	stack *thread_stack;
-	struct thread *next;
 	void *args;
+	struct thread *next;
+	stack *thread_stack;
+	stack *base_ptr;	
+	int has_run_before;
 	jmp_buf jmp;
 	//pionter to the threads stack
 	//fields storing the current stack and base pointer when the thread yields.
@@ -44,8 +45,8 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	t1->next = NULL;
 	t1->thread_stack = (stack *) malloc(sizeof(stack));
 	t1->thread_stack = (t1->thread_stack->data) + SIZE_OF_STACK;
-
 	t1->base_ptr = t1->thread_stack; 
+	t1->has_run_before = 0;
 
 	// t1->thread_stack = (stack *) malloc(sizeof(stack));
 	// if (current_thread == 0)	
@@ -87,7 +88,6 @@ maintain ring of those structures
 void thread_add_runqueue(struct thread *t){
 	if (current_thread == 0)	
 	{
-		//printf("Thread is uninitialized\n");
 		current_thread = t;
 		last_thread = t;
 		last_thread->next = current_thread;
@@ -103,6 +103,36 @@ void thread_add_runqueue(struct thread *t){
 	
 };
 /*
+TODO: need to figure out how to test if current thread has returned from exec. 
+restores state of scheduled thread.
+if never run
+	set the initial stack and base pointer .*/
+void dispatch(void){
+	//following is here for testing till i figure out jmp reason.
+	//need to get these to be correct....
+	//set up thread stack and base pointer
+	if(!current_thread->has_run_before){
+		current_thread->has_run_before = 1;
+		__asm__ volatile("mov %%rax, %%rsp" : : "a" (current_thread->thread_stack));
+		__asm__ volatile("mov %%rax, %%rbp" : : "a" (current_thread->base_ptr));
+		current_thread->function(current_thread->args);
+	}else{
+		longjmp(current_thread->jmp, 1);
+	}
+	thread_exit();
+};
+
+/*decides which thread to run next.
+apparently not working right now?*/
+void schedule(void){
+	if(current_thread->next == NULL){
+		printf("should never be the case. if we get here WE MESSED UP\n");
+	}else{
+		last_thread = last_thread->next;
+		current_thread = current_thread->next;
+	}
+};
+/*
 sspends current thread by saving context/ what is context?
 save stack state..
 calls scheduler which is inherently called by the dispatcher. 
@@ -113,39 +143,14 @@ void thread_yield(void){
 	}else{
 		//current thread exists .
 		setjmp(current_thread->jmp);
-		void schedule(void);
-		void dispatch(void);
+		schedule();
+		dispatch();
 	}
 
 };
 
-/*
-TODO: need to figure out how to test if current thread has returned from exec. 
-restores state of scheduled thread.
-if never run
-	set the initial stack and base pointer .*/
-void dispatch(void){
-	//following is here for testing till i figure out jmp reason.
-	//need to get these to be correct....
-	//set up thread stack and base pointer
-	if(! setjmp(current_thread->jmp)){
-		__asm__ volatile("mov %%rax, %%rsp" : : "a" (current_thread->thread_stack));
-		__asm__ volatile("mov %%rax, %%rbp" : : "a" (current_thread->base_ptr));
-		current_thread->function(current_thread->args);
-	}else{
-		longjmp(current_thread->jmp, 1);
-	}
-	//if returns i guesss it comes down here?
-};
-/*decides which thread to run next.*/
-void schedule(void){
-	if(current_thread->next == NULL){
-		printf("should never be the case. if we get here WE MESSED UP\n");
-	}else{
-		last_thread = last_thread->next;
-		current_thread = current_thread->next;
-	}
-};
+
+
 /*
 removes calling thread from run queue
 frees stack and struct thread

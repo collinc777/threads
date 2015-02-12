@@ -35,7 +35,7 @@ void f1(void *arg)
         if (i == 110) {
             i = 100;
         }
-        thread_yield();
+        
     }
 }
 
