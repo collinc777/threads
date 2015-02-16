@@ -88,9 +88,6 @@ maintain ring of those structures
   */
 
 void thread_add_runqueue(struct thread *t){
-	//TEST
-	printf("thread_add_runqueue\n");
-	//TEST
 	if (current_thread == 0)	
 	{
 		current_thread = t;
@@ -113,9 +110,6 @@ restores state of scheduled thread.
 if never run
 	set the initial stack and base pointer .*/
 void dispatch(void){
-	//TEST
-	printf("dispatch\n");
-	//TEST
 	//following is here for testing till i figure out jmp reason.
 	//need to get these to be correct....
 	//set up thread stack and base pointer
@@ -127,20 +121,15 @@ void dispatch(void){
 	}else{
 		//long jump is called multiple times. 
 		longjmp(current_thread->jmp, current_thread->set_jump_return);
-		current_thread->function(current_thread->args);
-		
-		
+		current_thread->function(current_thread->args);		
 	}
-	//thread exit not being called.
+	//thread exit not being called
 	thread_exit();
 };
 
 /*decides which thread to run next.
 apparently not working right now?*/
 void schedule(void){
-	//TEST
-	printf("schedule\n");
-	//TEST
 	if(current_thread->next == NULL){
 		printf("should never be the case. if we get here WE MESSED UP\n");
 	}else{
@@ -154,9 +143,6 @@ save stack state..
 calls scheduler which is inherently called by the dispatcher. 
 */
 void thread_yield(void){
-	//TEST
-	printf("thread_yield\n");
-	//TEST
 	if(current_thread == 0){
 		printf("error: cannot call yield on null thread\n");
 	}else{
@@ -176,9 +162,6 @@ removes calling thread from run queue
 frees stack and struct thread
 sets current to next and calls dispatch*/
 void thread_exit(void){
-	//TEST
-	printf("thread_exit\n");
-	//TEST
 	last_thread->next = current_thread->next;
 	struct thread *tmp = current_thread;
 	current_thread = current_thread->next;
@@ -189,9 +172,6 @@ void thread_exit(void){
     dispatch();
 };
 void thread_start_threading(void){
-	//TEST
-	printf("thread_start_threading\n");
-	//TEST
 	schedule();
 	dispatch();
 };

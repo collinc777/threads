@@ -4,11 +4,6 @@
 
 void f3(void *arg)
 {
-    //TEST
-    int a;
-    printf("Do i ever get into the third thread\n");
-    scanf("%d", &a);
-    //TEST
     int i;
     while (1) {
         printf("thread 3: %d\n", i++);
@@ -18,11 +13,6 @@ void f3(void *arg)
 
 void f2(void *arg)
 {
-    //TEST
-    int a;
-    printf("Do i ever get into the second thread\n");
-    //scanf("%d", &a);
-    //TEST
     int i = 0;   
     while(1) {
         printf("thread 2: %d\n",i++);
@@ -35,11 +25,6 @@ void f2(void *arg)
 
 void f1(void *arg)
 {
-    //TEST
-    int a;
-    printf("Do i ever get into the first thread\n");
-    //scanf("%d", &a);
-    //TEST
     int i = 100;
     struct thread *t2 = thread_create(f2, NULL);
     thread_add_runqueue(t2);
