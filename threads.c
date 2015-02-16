@@ -129,6 +129,7 @@ void dispatch(void){
 		longjmp(current_thread->jmp, current_thread->set_jump_return);
 		current_thread->function(current_thread->args);
 		
+		
 	}
 	//thread exit not being called.
 	thread_exit();
@@ -160,9 +161,10 @@ void thread_yield(void){
 		printf("error: cannot call yield on null thread\n");
 	}else{
 		//current thread exists .
-		current_thread->set_jump_return = setjmp(current_thread->jmp);
-		schedule();
-		dispatch();
+		if(! setjmp(current_thread->jmp)){
+			schedule();
+			dispatch();
+		}
 	}
 
 };
