@@ -19,8 +19,8 @@ struct thread{
 	struct thread *next;
 	stack *thread_stack;
 	stack *base_ptr;	
+	stack *new_stack_ptr;
 	int has_run_before;
-	int set_jump_return;
 	jmp_buf jmp;
 	//pionter to the threads stack
 	//fields storing the current stack and base pointer when the thread yields.
@@ -29,7 +29,6 @@ struct thread{
 
 static struct thread *current_thread;
 static struct thread *last_thread;
-static jmp_buf buf;
 
 
 /* allocates a struct thread
@@ -46,8 +45,8 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	t1->args = arg;
 	t1->next = NULL;
 	t1->thread_stack = (stack *) malloc(sizeof(stack));
-	t1->thread_stack = (t1->thread_stack->data) + SIZE_OF_STACK;
-	t1->base_ptr = t1->thread_stack; 
+	t1->new_stack_ptr = (t1->thread_stack->data) + SIZE_OF_STACK;
+	t1->base_ptr = t1->new_stack_ptr; 
 	t1->has_run_before = 0;
 
 	// t1->thread_stack = (stack *) malloc(sizeof(stack));
@@ -115,15 +114,16 @@ void dispatch(void){
 	//set up thread stack and base pointer
 	if(!current_thread->has_run_before){
 		current_thread->has_run_before = 1;
-		__asm__ volatile("mov %%rax, %%rsp" : : "a" (current_thread->thread_stack));
+		__asm__ volatile("mov %%rax, %%rsp" : : "a" (current_thread->new_stack_ptr));
 		__asm__ volatile("mov %%rax, %%rbp" : : "a" (current_thread->base_ptr));
 		current_thread->function(current_thread->args);
 	}else{
 		//long jump is called multiple times. 
-		longjmp(current_thread->jmp, current_thread->set_jump_return);
+		longjmp(current_thread->jmp, 1);
 		current_thread->function(current_thread->args);		
 	}
 	//thread exit not being called
+	printf("i gets to thread exit \n");
 	thread_exit();
 };
 
@@ -165,9 +165,18 @@ void thread_exit(void){
 	last_thread->next = current_thread->next;
 	struct thread *tmp = current_thread;
 	current_thread = current_thread->next;
+
+
+	//create should work now lets initialize the struct
+	tmp->function = NULL;
+	tmp->args = NULL;
+	tmp->new_stack_ptr = NULL;
+	tmp->base_ptr = NULL;
+	tmp->has_run_before = 0;
     tmp->next = NULL;
     //now to free up tmp
     free(tmp->thread_stack);
+    
     free(tmp);
     dispatch();
 };
