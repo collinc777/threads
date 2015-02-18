@@ -162,22 +162,19 @@ removes calling thread from run queue
 frees stack and struct thread
 sets current to next and calls dispatch*/
 void thread_exit(void){
+	
 	last_thread->next = current_thread->next;
-	struct thread *tmp = current_thread;
-	current_thread = current_thread->next;
-
-
 	//create should work now lets initialize the struct
-	tmp->function = NULL;
-	tmp->args = NULL;
-	tmp->new_stack_ptr = NULL;
-	tmp->base_ptr = NULL;
-	tmp->has_run_before = 0;
-    tmp->next = NULL;
+	current_thread->function = NULL;
+	current_thread->args = NULL;
+	current_thread->new_stack_ptr = NULL;
+	current_thread->base_ptr = NULL;
+	current_thread->has_run_before = 0;
+    current_thread->next = NULL;
     //now to free up tmp
-    free(tmp->thread_stack);
-    
-    free(tmp);
+    free(current_thread->thread_stack);
+    free(current_thread);
+    current_thread = last_thread->next;
     dispatch();
 };
 void thread_start_threading(void){

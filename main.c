@@ -9,6 +9,7 @@ void f3(void *arg)
         printf("thread 3: %d\n", i);
         thread_yield();
     }
+    printf("do i even get to thread 3\n");
 }
 
 void f2(void *arg)
@@ -18,6 +19,7 @@ void f2(void *arg)
         printf("thread 2: %d\n",i);
         thread_yield();
     }
+    printf("what happens at end of thread 2\n");
 }
 
 void f1(void *arg)
@@ -32,6 +34,7 @@ void f1(void *arg)
         thread_yield();
         
     }
+    printf("what happens at end of thread1\n");
 }
 
 int main(int argc, char **argv)
