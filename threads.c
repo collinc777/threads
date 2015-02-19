@@ -29,6 +29,8 @@ struct thread{
 
 static struct thread *current_thread;
 static struct thread *last_thread;
+static struct thread *tmp;
+static jmp_buf main_buf;
 
 
 /* allocates a struct thread
@@ -38,16 +40,16 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	//thread created. now need to initialize and malloc more mem
 
 
-	struct thread *t1;
-	t1 = (struct thread *) malloc(sizeof(struct thread));
+		struct thread *t1;
+		t1 = (struct thread *) malloc(sizeof(struct thread));
 	//create should work now lets initialize the struct
-	t1->function = f;
-	t1->args = arg;
-	t1->next = NULL;
-	t1->thread_stack = (stack *) malloc(sizeof(stack));
-	t1->new_stack_ptr = (t1->thread_stack->data) + SIZE_OF_STACK;
-	t1->base_ptr = t1->new_stack_ptr; 
-	t1->has_run_before = 0;
+		t1->function = f;
+		t1->args = arg;
+		t1->next = NULL;
+		t1->thread_stack = (stack *) malloc(sizeof(stack));
+		t1->new_stack_ptr = (t1->thread_stack->data) + SIZE_OF_STACK;
+		t1->base_ptr = t1->new_stack_ptr; 
+		t1->has_run_before = 0;
 
 	// t1->thread_stack = (stack *) malloc(sizeof(stack));
 	// if (current_thread == 0)	
@@ -65,7 +67,7 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	// 	printf("Fucntion DID NOT WORK\n");
 	// }
 	//can we be asured that it will always be divisible by 8? the world may never know
-	
+
 	// if(t1->thread_stack){
 	// 	printf("thread stack is pointing to something that is not null\n");
 	// 	printf("%lu\n", sizeof(t1->thread_stack->data));
@@ -75,16 +77,16 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	// }else{
 	// 	printf("THREAD DID NOT MALLOC\n");
 	// }
-	
+
 
 };
 /*
 add struct thread to end of run queue
 uses round robing scheduler?
 maintain ring of those structures
-	always have a next field which points to the next thread to be scheduled
-	static variable called current_thread points to current thread thatt is running. 
-  */
+always have a next field which points to the next thread to be scheduled
+static variable called current_thread points to current thread thatt is running. 
+*/
 
 void thread_add_runqueue(struct thread *t){
 	if (current_thread == 0)	
@@ -92,39 +94,37 @@ void thread_add_runqueue(struct thread *t){
 		current_thread = t;
 		last_thread = t;
 		last_thread->next = current_thread;
-		//printf("curent thread %lu == %lu\n", (long unsigned int) current_thread, (long unsigned int) t);
+	//printf("curent thread %lu == %lu\n", (long unsigned int) current_thread, (long unsigned int) t);
 	}else{
-		//current thread already exists
+	//current thread already exists
 
 		last_thread->next = t;
 		last_thread = t;
 		last_thread->next = current_thread;
 	}
 
-	
+
 };
 /*
 TODO: need to figure out how to test if current thread has returned from exec. 
 restores state of scheduled thread.
 if never run
-	set the initial stack and base pointer .*/
+set the initial stack and base pointer .*/
 void dispatch(void){
-	//following is here for testing till i figure out jmp reason.
-	//need to get these to be correct....
-	//set up thread stack and base pointer
+//following is here for testing till i figure out jmp reason.
+//need to get these to be correct....
+//set up thread stack and base pointer
 	if(!current_thread->has_run_before){
 		current_thread->has_run_before = 1;
 		__asm__ volatile("mov %%rax, %%rsp" : : "a" (current_thread->new_stack_ptr));
 		__asm__ volatile("mov %%rax, %%rbp" : : "a" (current_thread->base_ptr));
 		current_thread->function(current_thread->args);
 	}else{
-		//long jump is called multiple times. 
-		longjmp(current_thread->jmp, 1);
-		current_thread->function(current_thread->args);		
+	//long jump is called multiple times. 
+		longjmp(current_thread->jmp, 1);		
 	}
-	//thread exit not being called
-	printf("i gets to thread exit \n");
-	thread_exit();
+//thread exit not being called
+    	thread_exit();
 };
 
 /*decides which thread to run next.
@@ -142,42 +142,48 @@ sspends current thread by saving context/ what is context?
 save stack state..
 calls scheduler which is inherently called by the dispatcher. 
 */
-void thread_yield(void){
-	if(current_thread == 0){
-		printf("error: cannot call yield on null thread\n");
-	}else{
+void thread_yield(void){	
 		//current thread exists .
-		if(! setjmp(current_thread->jmp)){
-			schedule();
-			dispatch();
-		}
+	if(! setjmp(current_thread->jmp)){
+		schedule();
+		dispatch();
 	}
-
 };
-
-
 
 /*
 removes calling thread from run queue
 frees stack and struct thread
 sets current to next and calls dispatch*/
 void thread_exit(void){
+	if(current_thread->next == current_thread){
+		tmp = current_thread;
+		tmp->next = NULL;
+		tmp = NULL;
+		longjmp(main_buf, 1);
+	}else{
+		last_thread->next = current_thread->next;
+		tmp = current_thread;
+		current_thread = current_thread->next;
+		tmp->next = NULL;
+		longjmp(main_buf, 1);
+	}
 	
-	last_thread->next = current_thread->next;
-	//create should work now lets initialize the struct
-	current_thread->function = NULL;
-	current_thread->args = NULL;
-	current_thread->new_stack_ptr = NULL;
-	current_thread->base_ptr = NULL;
-	current_thread->has_run_before = 0;
-    current_thread->next = NULL;
-    //now to free up tmp
-    free(current_thread->thread_stack);
-    free(current_thread);
-    current_thread = last_thread->next;
-    dispatch();
 };
+
+
 void thread_start_threading(void){
-	schedule();
-	dispatch();
+	if(!setjmp(main_buf)){
+		schedule();
+		dispatch();
+	}else{
+		if(tmp == NULL){
+			free(current_thread->thread_stack);
+			free(current_thread);
+			return;
+		}else{
+			free(tmp->thread_stack);
+			free(tmp);
+			dispatch();
+		}
+	}
 };
